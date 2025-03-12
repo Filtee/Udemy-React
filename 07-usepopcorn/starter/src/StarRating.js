@@ -52,7 +52,7 @@ export default function StarRating({
             full={tempRating ? tempRating >= idx + 1 : rating >= idx + 1}
             onRate={() => handelRating(idx + 1)}
             onHoverIn={() => setTempRating(idx + 1)}
-            onHoverOut={() => setTempRating(idx + 1)}
+            onHoverOut={() => setTempRating(rating)}
             color={color}
             size={size}
           />
