@@ -433,3 +433,91 @@ useEffect(
   1. 只能在顶层调用
   2. 只能在 React Functions 中调用
   3.  
+
+### 4.1 Initial State With a Callback
+
+* 通过回调函数来读取数据
+
+```javascript
+// 读取
+const [watched, setWatched] = useState(function () {
+  const storedValue = JSON.parse(localStorage.getItem("watched"));
+  return storedValue;
+});
+
+// 存储
+useEffect(
+  function () {
+    localStorage.setItem("watched", JSON.stringify(watched));
+  },
+  [watched]
+);
+```
+
+### 4.2 Refs
+
+* **ref**: reference, an object with **mutable** `.current` property that is **persisted across renders**
+  * 使用场景：
+    1. Create a variable that stays the same between renders
+    2. Select and store DOM elements
+  * refs 用于保存不被渲染的数据，通常只会在 event handlers 或 effects 中，而非 JSX 中
+  * 不能在渲染逻辑中读写 `.current` 值，而是在 `useEffect` 钩子中执行
+
+* **ref** vs. **state**
+
+|           | 在渲染间保存数据 | 导致重新渲染 | 不可变 | 异步更新 |
+| --------- | ---------------- | ------------ | ------ | -------- |
+| **State** | ✅                | ✅            | ✅      | ✅        |
+| **Ref**   | ✅                | ❌            | ❌      | ❌        |
+
+```javascript
+function Search({ query, setQuery }) {
+  // 使用 ref，不直接和 DOM 元素打交道
+  const inputElement = useRef(null);
+
+  useEffect(function () {
+    function callback(e) {
+      if (document.activeElement === inputElement.current) {
+        return;
+      }
+
+      if (e.code === "Enter") {
+        inputElement.current.focus();
+        setQuery("");
+      }
+    }
+
+    document.addEventListener("keydown", callback);
+
+    return () => document.removeEventListener("keydown", callback);
+  }, [setQuery]);
+  // useEffect(function () {
+  //   const el = document.querySelector(".search");
+  //   console.log(el);
+  //   el.focus();
+  // }, []);
+
+  return (
+    <input
+      className="search"
+      type="text"
+      placeholder="Search movies..."
+      value={query}
+      onChange={(e) => setQuery(e.target.value)}
+      ref={inputElement}
+    />
+  );
+}
+```
+
+### 4.3 Custom Hooks
+
+<img src="./_assets/10.png" width=80%/>
+
+* Custom Hooks 复用逻辑
+  * 允许我们在多个组件中复用非视觉逻辑
+  * 一个自定义钩子应只能有一个用途，来让它具有**复用性**和**可移植性**
+
+<img src="./_assets/11.png" width=80%/>
+
+## 5. Class Components *
