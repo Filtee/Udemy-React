@@ -1,6 +1,6 @@
 # 03-Advanced React + Redux
 
-## 3.1 `useReducer` Hook
+## 1. `useReducer` Hook
 
  ```javascript
  function reducer(state, action) {
@@ -48,7 +48,7 @@ const [count, dispatch] = useReducer(reducer, 0);
 
 <img src="./_assets/12.png">
 
-* `json-server`
+* 使用 `json-server` 创建伪 API
 
   ```bash
   npm i json-server
@@ -67,5 +67,236 @@ const [count, dispatch] = useReducer(reducer, 0);
   npm run server
   ```
 
+* 何时使用 `useReducer`
+
+<img src="./_assets/13.png">
+
+## 2. React Router
+
+* 使用 vite 创建 react 应用，并使用 ESLint
+
+```bash
+npm create vite@latest
+# 需要 ESLint
+npm i eslint vite-plugin-eslint eslint-config-react-app --save-dev
+```
+
+```json
+// 创建 .eslintrc.json 文件保存 ESLint 配置
+{
+  "extends": "react-app"
+}
+```
+
+```javascript
+// 修改 vite.config.js 文件
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import eslint from "vite-plugin-eslint";
+
+export default defineConfig({
+  plugins: [react(), eslintPlugin({ failOnError: false })],
+});
+```
+
+### 2.1 Routing
+
+* **SPA**: Single-Page Application 单页应用 => 完全在客户端 (浏览器) 中执行的应用
+  * **Routes**: 不同的 URL 匹配不同的 views (components)
+  * **JavaScript**: (React) 用来更新页面 (DOM)
+  * 整个页面永不刷新，如同一个本机应用
+* `react-router`
+
+```bash
+npm i react-router-dom
+```
+
+```jsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Product from "./pages/Product";
+import Pricing from "./pages/Pricing";
+import Homepage from "./pages/Homepage";
+
+function App() {
+  return (
+    <BrowserRouter
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route path="/" element={<Homepage />} />
+        <Route path="product" element={<Product />} />
+        <Route path="pricing" element={<Pricing />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+```
+
+* Routing
+
+```jsx
+// 直接使用会导致页面刷新和网络请求 => 不好
+<a href="/pricing">Pricing</a>
+// 采用由 React-Router 提供的 "Link" / "NavLink"
+// 采用"NavLink"会在源码中添加一个"active"类 方便在CSS中修改
+<NavLink to="/">Home</NavLink> 
+```
+
+### 2.2 Styling
+
+* **CSS Modules**: 大型项目中不会使用全局 CSS 文件，其作用域应是一个单独的组件
+
+```jsx
+// 全局引用 => 在 main 文件中
+import "./index.css"
+// 局部引用 => 在每个单独的页面中
+import styles from "./PageNave.module.css"
+<nav className={styles.nav}>...</nav>
+```
+
+```css
+/* 在局部文件中添加全局 css 类 */
+.nav :global(.active) {
+  background-color: green;
+}
+```
+
+### 2.3 Nested Routes
+
+e.g. `localhost:xxxx/app/cities`
+
+```jsx
+<Route path="app" element={<Applayout />}>
+  { /* Index Route 默认展示 */ }
+  <Route index element={<p>List of Cities</p>} />
+	<Route path="cities" element={<p>List of Cities</p>} />
+	<Route path="countries" element={<p>Countries</p>} />
+	<Route path="form" element={<p>Form</p>} />
+</Route>
+```
+
+```jsx
+function Sidebar() {
+  return (
+    <div className={styles.sidebar}>
+      ...
+      { /* 类似于 {children} */}
+      <Outlet />
+      ...
+  );
+}
+```
+
+### 2.4 Storing State in the URL
+
+* 使用原因
+  1. Easy way to store state in a **global place**, accessible to **all components** in the app
+  2. Good way to **"pass" data** from one page into the next page
+  3. Makes it possible to **bookmark and share** the page with the exact UI state it had at the time
+* 
+
+```jsx
+// App.jsx 中 => `:id` 决定了稍后 City.jsx 中-
+// fetch data 得到的 object 中对应值的 key 名
+<Route path="cities/:id" element={<City />} />
+
+// City.jsx 中 使用 `useParams` 来获取数据
+function City() {
+  const x = useParams();
+  ...
+};
+
+// CityItem.jsx 中
+function CityItem({ city }) {
+  // 获取 id
+  const { id } = city;
+  // 获取 query params
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lat = searchParams.get("lat");
+  const lng = searchParams.get("lng");
   
+  return (
+    <li >
+      <Link className={styles.cityItem} to={`${id}`}>
+        ...
+      </Link>
+    </li>
+  );
+}
+```
+
+### 2.5 `useNavigate`
+
+```jsx
+const navigate = useNavigate()
+// 前往页面
+<div className={...} onClick={() => {navigate("form")}}>
+  ...
+</div>
+// 返回页面 -1 代表向后返回一次
+<Button type="back" onClick={(e) => {
+  // 在 form 中的时候要防止提交表单刷新页面
+	e.preventDefault();
+	navigate(-1);
+}}
+>
+	&larr; Back
+</Button>
+```
+
+* `<Navigate />` 的使用: 类似于重定向
+  * 需要添加 `replace` 关键字，来替换 index 页面在栈中的位置，不然无法返回
+    * 这是目前 `<Navigate />` 几乎唯一的用法
+
+```jsx
+<Route
+  index
+  element={<Navigate replace to="cities" />}
+/>
+<Route
+	path="cities"
+	element={<CityList cities={cities} isLoading={isLoading} />}
+/>
+```
+
+## 3. Context API
+
+* 目的：防止 "Prop Drilling"，允许我们 "broadcast" 全局状态
+  1. **Provide**: 为子组件提供访问 "value" 的权限
+  2. **Value**: 通常是状态和函数
+  3. **Consumer**: 每一个需要读取 Provider Context Value 的组件
+
+<img src="./_assets/14.png" width=50%>
+
+* 使用：
+
+  ```jsx
+  // 1) Create new context.
+  const PostContext = createContext();
+  ```
+
+  ```jsx
+  return (
+    // 2) Provide value to child components
+    <PostContext.Provider
+      value={{
+        posts: SearchPosts,
+        onAddPost: handleAddPost,
+        onClearPosts: handleClearPosts,
+        searchQuery,
+        setSearchQuery,
+      }}
+    >
+      ...
+    </PostContext.Provider>
+  ```
+
+  ```jsx
+  // 3) Consuming the context value
+  const { onClearPosts } = useContext(PostContext);
+  ```
+
+  <img src="./_assets/15.png" width=50%>
 
