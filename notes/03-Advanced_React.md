@@ -270,33 +270,111 @@ const navigate = useNavigate()
 
 <img src="./_assets/14.png" width=50%>
 
-* 使用：
+### 3.1 使用：
 
-  ```jsx
-  // 1) Create new context.
-  const PostContext = createContext();
-  ```
+```jsx
+// 1) Create new context.
+const PostContext = createContext();
+```
 
-  ```jsx
+```jsx
+return (
+  // 2) Provide value to child components
+  <PostContext.Provider
+    value={{
+      posts: SearchPosts,
+      onAddPost: handleAddPost,
+      onClearPosts: handleClearPosts,
+      searchQuery,
+      setSearchQuery,
+    }}
+  >  
+    ...
+  </PostContext.Provider>
+```
+
+```jsx
+// 3) Consuming the context value
+const { onClearPosts } = useContext(PostContext);
+```
+
+<img src="./_assets/15.png" width=50%>
+
+### 3.2 更优雅的方式
+
+更优雅的创建 Context API 方式：全部提出来放在新文件中
+
+```jsx
+import { createContext, useState } from "react";
+import { faker } from "@faker-js/faker";
+
+// 1) Create new context.
+const PostContext = createContext();
+
+// 2) Create new context provider.
+function PostProvider({ children }) {
   return (
-    // 2) Provide value to child components
     <PostContext.Provider
       value={{
-        posts: SearchPosts,
-        onAddPost: handleAddPost,
-        onClearPosts: handleClearPosts,
-        searchQuery,
-        setSearchQuery,
+        ...
       }}
     >
-      ...
+      {children}
     </PostContext.Provider>
-  ```
+  );
+}
 
-  ```jsx
-  // 3) Consuming the context value
-  const { onClearPosts } = useContext(PostContext);
-  ```
+// 3) Encapsulate `useContext` into a new custom hook.
+function usePosts() {
+  const context = useContext(PostContext);
+  return context;
+}
 
-  <img src="./_assets/15.png" width=50%>
+export { PostProvider, usePosts };
+```
+
+* 使用的时候
+
+```jsx
+import { PostProvider, PostContext } from "./PostContext";
+```
+
+<img src="./_assets/16.png">
+
+### 3.3 *实现地图
+
+* 安装 `leaflet` => 最大的开源地图库
+
+```bash
+# 需要是 react@19 才能够安装 react-leaflet@5
+# react@18 => react-leaflet@4
+npm i react-leaflet leaflet
+```
+
+```jsx
+function Map() {
+  const [mapPosition, setMapPosition] = useState([40, 0]);
+  
+  return (
+    <div>
+      <MapContainer
+        className={styles.map}
+        center={mapPosition}
+        zoom={13}
+        scrollWheelZoom={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
+        />
+        <Marker position={mapPosition}>
+          <Popup>
+            A pretty CSS3 popup. <br /> Easily customizable.
+          </Popup>
+        </Marker>
+      </MapContainer>
+    </div>
+  );
+}
+```
 
