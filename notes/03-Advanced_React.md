@@ -261,6 +261,12 @@ const navigate = useNavigate()
 />
 ```
 
+* `replace`
+
+```jsx
+navigate("/app", { replace: true });
+```
+
 ## 3. Context API
 
 * 目的：防止 "Prop Drilling"，允许我们 "broadcast" 全局状态
@@ -377,4 +383,148 @@ function Map() {
   );
 }
 ```
+
+* 钩子组件：返回 `null`
+
+```jsx
+/* `useMap` Hook */
+function ChangeCenter({ position }) {
+  const map = useMap();
+  map.setView(position);
+}
+
+/* `useMapEvents` Hook */
+function DetectClick() {
+  const navigate = useNavigate();
+  useMapEvents({
+    click: (e) => {
+      navigate(`form?lat=${e.latlng.lat}&lng=${e.latlng.lng}`);
+    },
+  });
+}
+
+/* 写到 JSX 组件中 */
+function Map() {
+  const [mapPosition, setMapPosition] = useState([40, 0]);
+  
+  return (
+    <div>
+      <MapContainer ...>
+        ...
+        { /* 改变地图展示的中心 */ }
+        <ChangeCenter position={mapPosition} />
+        { /* 检测地图中的点击 */ }
+        <DetectClick />
+      </MapContainer>
+    </div>
+  );
+}
+```
+
+* 创建城市 (标准的 `post` 请求)
+
+```jsx
+// Context API 中
+async function createCity(newCity) {
+  try {
+    setIsLoading(true);
+    const res = await fetch(`${BASE_URL}/cities/`, {
+      method: "POST",
+      body: JSON.stringify(newCity),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    setCities((prevCities) => [...prevCities, data]);
+  } catch (err) {
+    alert("There was an error loading data...");
+  } finally {
+    setIsLoading(false);
+  }
+}
+```
+
+* 使用 `useReducer` 重构 `Context API`
+
+  * `function::reducer`
+
+  ```jsx
+  // 本应用中 context 需要处理的是异步数据
+  // `reducer` 需要是纯函数，不能够包含异步逻辑
+  // 因此不能把所有的逻辑都放在 `reducer` 中
+  function reducer(state, action) {
+    switch (action.type) {
+      case "loading":
+        return {
+          ...state,
+          isLoading: true,
+        };
+  
+      case "cities/loaded":
+        return {
+          ...state,
+          isLoading: false,
+          cities: action.payload,
+        };
+  
+      ...
+  
+      case "rejected":
+        return {
+          ...state,
+          isLoading: false,
+          error: action.payload,
+        };
+  
+      default:
+        throw new Error("Unkonw action type.");
+    }
+  }
+  ```
+
+  * `function::CityProvider(...)`
+
+  ```jsx
+  function CitiesProvider({ children }) {
+    const [{ cities, isLoading, currentCity }, dispatch] = useReducer(
+      reducer,
+      initialState
+    );
+  
+    useEffect(function () {
+      async function fetchCities() {
+        dispatch({ type: "loading" });
+  
+        try {
+          const res = await fetch(`${BASE_URL}/cities`);
+          const data = await res.json();
+          dispatch({
+            type: "cities/loaded",
+            payload: data,
+          });
+        } catch (err) {
+          dispatch({
+            type: "rejected",
+            payload: "There was an error loading data...",
+          });
+        }
+      }
+  
+      fetchCities();
+    }, []);
+    
+    ...
+  
+    return (
+      <CitiesContext.Provider value={{...}}>
+        {children}
+      </CitiesContext.Provider>
+    );
+  }
+  ```
+
+### 3.5 Fake Authentication
+
+
 
