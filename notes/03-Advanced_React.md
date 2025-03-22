@@ -528,3 +528,89 @@ async function createCity(newCity) {
 
 
 
+## 4. Performance Optimization 
+
+* **Performance Optimization Tools**
+  1. Prevent wasted renders
+  2. Improve app speed (Responsiveness)
+  3. Reduce bundle size
+
+* `profiler`
+
+### 4.1 使用 `children` 优化
+
+现有 `SlowComponent`
+
+```jsx
+function SlowComponent() {
+  const words = Array.from({ length: 100_000 }, () => "WORD");
+  return (
+    <ul>
+      {words.map((word, i) => (
+        <li key={i}>
+          {i}: {word}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+* 原先做法 => 更新状态非常慢，因为要重新渲染 `SlowComponent`
+
+  ```jsx
+  export default function Test() {
+    const [count, setCount] = useState(0);
+    return (
+      <div>
+        <h1>Slow counter?!?</h1>
+        <button onClick={() => setCount((c) => c + 1)}>Increase: {count}</button>
+        <SlowComponent />
+      </div>
+    );
+  }
+  ```
+
+* 使用 `children` => 不会重新渲染 `SlowComponent`
+
+  ```jsx
+  function Counter({ children }) {
+    const [count, setCount] = useState(0);
+    return (
+      <div>
+        <h1>Slow counter?!?</h1>
+        <button onClick={() => setCount((c) => c + 1)}>Increase: {count}</button>
+        {children}
+      </div>
+    );
+  }
+  
+  export default function Test() {
+    return (
+      <div>
+        <Counter>
+          <SlowComponent />
+        </Counter>
+      </div>
+    );
+  }
+  ```
+
+  * 因为 `children` 组件在组件重新渲染之前就已经被创建了
+
+### 4.2 Memorization
+
+* **Memorization**: 类似于缓存的概念，不用重新渲染
+
+  <img src="./_assets/17.png">
+
+  1. Memorize **components** with `memo`
+  2. Memorize **objects** with `useMemo`
+  3. Memorize **functions** with `useCallback`
+
+### 4.2.1 `memo` Function
+
+* 只要 props 保持不变，使用 `memo` 创建的组件不会 <u>在父组件重新渲染时</u> 重新渲染
+  * 当 props 或订阅的 context 改变时，组件仍然会重新渲染
+* **并不意味着任何时候都要使用 `memo`**
+  * 只有在组件非常重 (slow rendering) 和经常重新渲染且 props 不变时，使用 `memo` 才合理
